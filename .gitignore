@@ -1,10 +1,16 @@
 # Local .terraform directories
 .terraform/
+
+# Certs
 certs/
+
 # .tfstate files
 *.tfstate
 *.tfstate.*
 
+# Keys
+*.pem
+*.pub
 # Crash log files
 crash.log
 crash.*.log
