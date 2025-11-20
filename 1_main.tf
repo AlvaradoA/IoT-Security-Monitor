@@ -257,12 +257,17 @@ resource "local_file" "root_ca" {
   filename = "certs/AmazonRootCA1.pem"
 }
 
+# Adding SSH key to Amazon EC2
+resource "aws_key_pair" "my_key" {
+  key_name   = "${var.key_name}.pub"
+  public_key = file("${var.key_name}.pem.pub")
+}
 
 # VM 1: ELK Stack (Kibana, Elasticsearch)
 resource "aws_instance" "elk" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.medium"
-  key_name      = var.key_name
+  key_name      = aws_key_pair.my_key.key_name
 
   vpc_security_group_ids = [aws_security_group.elk_sg.id]
   user_data              = file("4_init.sh")
@@ -302,7 +307,7 @@ resource "aws_instance" "elk" {
 resource "aws_instance" "collector" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.medium"
-  key_name      = var.key_name
+  key_name      = aws_key_pair.my_key.key_name
 
   vpc_security_group_ids = [aws_security_group.collector_sg.id]
   user_data              = file("4_init.sh")
@@ -353,7 +358,7 @@ resource "aws_instance" "collector" {
       # 4. Change filebeat.yml owner to 'root'
       "sudo chown root:root /opt/iot_stack/config/filebeat.yml",
 
-      # 5. Start all services (including the 'filebeat-setup' init container)
+      # 5. Start all services
       "cd /opt/iot_stack",
       "sudo docker-compose up -d"
     ]

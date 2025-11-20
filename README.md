@@ -29,7 +29,6 @@ Before deploying, ensure you have the following installed and configured:
 
   * [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
   * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
-  * An existing **EC2 Key Pair** (e.g., `my-key.pem`) downloaded to your project root.
 
 ### AWS Academy Specifics
 
@@ -44,20 +43,25 @@ This project is designed for the AWS Academy Learner Lab environment. It utilize
 
 ```bash
 git clone https://github.com/AlvaradoA/IoT-Security-Monitor.git
-cd cd IoT-Security-Monitor
+cd IoT-Security-Monitor
+```
+
+### Create an EC2 keypair
+
+Create an SSH key pair to allow Terraform to connect to the instances.
+
+```bash
+ssh-keygen -t rsa -b 4096 -f my-key.pem
 ```
 
 ### Configure Secrets
 
 Create a file named terraform.tfvars in the root directory.
-```
+```bash
 # terraform.tfvars
 
 # Your EC2 key pair name (without the .pem extension)
 key_name = "my-key"
-
-# Your home/local IP address with /32 at the end (e.g., "123.45.67.89/32")
-my_ip = "YOUR_PUBLIC_IP/32"
 
 # The ARN of your AWS Academy LabRole
 lab_role_arn = "arn:aws:iam::123456789012:role/LabRole"
@@ -66,7 +70,6 @@ lab_role_arn = "arn:aws:iam::123456789012:role/LabRole"
 lab_instance_profile_name = "LabInstanceProfile"
 
 # The S3 bucket prefix required by your lab instructions
-# IMPORTANT: Must match the pattern allowed by your lab (e.g., "iot-vpc-logs-")
 s3_bucket_prefix = "iot-vpc-logs-"
 
 # A secure password for the Elastic stack
@@ -76,7 +79,7 @@ elastic_password = "YourSecurePassword123!"
 ### Deploy Infrastructure
 Run the Terraform commands to provision the environment:
 
-```
+```bash
 # Initialize Terraform and download providers
 terraform init
 
@@ -115,11 +118,11 @@ After deployment, Terraform will output the connection details:
     * Select the vpc_flow_logs_db database.
 
     * Run the following command once to load your data partitions and queries to detect attacks. For example, to find the top talkers on the MQTT port:
-```
+```sql
 MSCK REPAIR TABLE vpc_flow_logs;
 ```
 
-```
+```sql
 SELECT srcaddr, sum(packets) as total_packets
 FROM vpc_flow_logs
 WHERE dstport = 1883 AND action = 'ACCEPT'
@@ -128,7 +131,7 @@ ORDER BY total_packets DESC;
 ```
 ## Cleanup
 To avoid incurring charges, destroy all resources when finished:
-```
+```bash
 terraform destroy
 ```
 
