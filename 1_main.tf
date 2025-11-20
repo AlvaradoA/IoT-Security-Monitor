@@ -81,7 +81,7 @@ resource "aws_s3_bucket" "flow_log_bucket" {
 }
 
 resource "aws_flow_log" "iot_vpc_flow_log" {
-  iam_role_arn         = var.lab_role_arn
+  # iam_role_arn         = var.lab_role_arn
   log_destination_type = "s3"
   log_destination      = aws_s3_bucket.flow_log_bucket.arn
   traffic_type         = "ALL"
