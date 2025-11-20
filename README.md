@@ -140,6 +140,3 @@ terraform destroy
 ```
 
 Note: The S3 buckets and Athena workgroups are configured with force_destroy = true to ensure a clean teardown.
-
-## License
-This project is open-source and available under the MIT License.
