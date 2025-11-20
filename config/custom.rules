@@ -1,0 +1,14 @@
+# 1) Normal sensor JSON
+alert tcp any any -> any 1883 (msg:"MQTT PUBLISH - normal sensor JSON"; flow:established,to_server; content:"\"temperature\""; nocase; content:"\"timestamp\""; nocase; pcre:"/\"temperature\".*\"timestamp\".*\".*\"/s"; sid:1002001; rev:2; priority:1; classtype:informational;)
+
+# 2) DDoS payload exact content + threshold counting
+alert tcp any any -> any 1883 (msg:"MQTT PUBLISH - DDoS payload detected"; flow:established,to_server; content:"DDoS Attack!"; pcre:"/DDoS Attack!/"; sid:1002002; rev:2; threshold: type limit, track by_dst, count 30, seconds 40; priority:5; classtype:attempted-dos;)
+
+# 3) Malformed payload exact match
+alert tcp any any -> any 1883 (msg:"MQTT PUBLISH - malformed JSON fragment"; flow:established,to_server; content:"{malformed: data"; pcre:"/\{malformed: data.*/"; sid:1002003; rev:2; priority:4; classtype:protocol-command-decode;)
+
+# 4) Heuristic: possible unclosed JSON - captures up to 2048 bytes
+alert tcp any any -> any 1883 (msg:"MQTT PUBLISH - possible unclosed JSON payload"; flow:established,to_server; pcre:"/\{[^}]{0,2048}\z/"; sid:1002004; rev:2; priority:2; classtype:protocol-anomaly;)
+
+# 5) Large single-packet MQTT payloads
+alert tcp any any -> any 1883 (msg:"MQTT PUBLISH - large packet"; flow:established,to_server; dsize:>1024; pcre:".*"; sid:1002005; rev:2; priority:3; classtype:protocol-anomaly;)

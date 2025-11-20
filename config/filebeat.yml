@@ -1,0 +1,19 @@
+# This file now enables the Suricata module
+filebeat.modules:
+- module: suricata
+  eve:
+    enabled: true
+    var.paths: ["/var/log/suricata/eve.json"]
+
+# --- THIS IS THE FIX ---
+# We must tell 'filebeat setup' where to find Kibana,
+# which is on the ELK server, not localhost.
+setup.kibana:
+  host: "ELK_SERVER_IP_PLACEHOLDER:5601"
+# --- END FIX ---
+
+# This section tells Filebeat where to send the data
+output.elasticsearch:
+  hosts: ["ELK_SERVER_IP_PLACEHOLDER:9200"]
+  username: "elastic"
+  password: "${ELASTIC_PASSWORD}"

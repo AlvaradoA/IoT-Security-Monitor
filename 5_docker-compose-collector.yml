@@ -1,0 +1,60 @@
+version: '3.7'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    restart: always
+    
+    # Put mosquitto on the host network so Suricata can see its traffic
+    network_mode: "host"
+    
+    volumes:
+      - /opt/iot_stack/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  suricata:
+    image: jasonish/suricata:6.0.4
+    container_name: suricata
+    restart: always
+    network_mode: "host" 
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    volumes:
+      - /opt/iot_stack/config/suricata.yaml:/etc/suricata/suricata.yaml
+      - /opt/iot_stack/config/custom.rules:/etc/suricata/rules/custom.rules
+      - /opt/iot_stack/logs/suricata:/var/log/suricata
+    command: -i eth0 
+
+  # This container runs first to load the dashboards
+  filebeat-setup:
+    image: docker.elastic.co/beats/filebeat:7.17.20
+    container_name: filebeat-setup
+    command: filebeat setup -e --modules=suricata
+    user: root 
+    env_file: .env
+    volumes:
+      - /opt/iot_stack/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /opt/iot_stack/data/filebeat:/usr/share/filebeat/data
+    restart: on-failure
+    depends_on:
+      - suricata 
+
+  # This container runs 2nd and ships the logs
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.20
+    container_name: filebeat
+    restart: always
+    user: root 
+    env_file: .env
+    
+    depends_on:
+      - filebeat-setup
+      - suricata
+      - mosquitto
+      
+    volumes:
+      - /opt/iot_stack/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /opt/iot_stack/logs/suricata:/var/log/suricata:ro
+      - /opt/iot_stack/data/filebeat:/usr/share/filebeat/data

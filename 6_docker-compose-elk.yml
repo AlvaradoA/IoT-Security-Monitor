@@ -1,0 +1,56 @@
+version: '3.7'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.20
+    container_name: elasticsearch
+    restart: always
+    
+    env_file: .env
+    
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD} 
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=false 
+      # This disables SSL on the HTTP port (9200) so the healthcheck can connect
+      - xpack.security.http.ssl.enabled=false
+      - network.host=0.0.0.0
+      - http.host=0.0.0.0
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g 
+    ports:
+      - "9200:9200"
+    volumes:
+      - /opt/iot_stack/data/elasticsearch:/usr/share/elasticsearch/data
+    networks:
+      - elk
+    healthcheck:
+      # This healthcheck now works because port 9200 is serving HTTP
+      test: ["CMD-SHELL", "curl -s --user elastic:${ELASTIC_PASSWORD} -XGET http://localhost:9200/_cluster/health | grep -E -q '(\"status\":\"green\"|\"status\":\"yellow\")'"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.20
+    container_name: kibana
+    restart: always
+
+    env_file: .env
+    
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+      - SERVER_HOST=0.0.0.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - elk
+
+networks:
+  elk:
+    driver: bridge
