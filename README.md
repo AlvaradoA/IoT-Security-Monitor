@@ -76,6 +76,10 @@ s3_bucket_prefix = "iot-vpc-logs-"
 elastic_password = "YourSecurePassword123!"
 ```
 
+### Update Configs
+
+Update the configuration files within the `config/` directory to align with your specific environment and monitoring requirements.
+
 ### Deploy Infrastructure
 Run the Terraform commands to provision the environment:
 
